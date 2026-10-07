@@ -30,7 +30,8 @@
   function statusBadge(item) {
     var label = C.statusLabel(item.status, item.type);
     if (!label) return '';
-    return '<span class="badge badge-done">' + label + '</span>';
+    var cls = item.status === C.STATUS_DRAFT ? 'badge-draft' : 'badge-done';
+    return '<span class="badge ' + cls + '">' + label + '</span>';
   }
 
   function catBadge(item) {
@@ -38,7 +39,10 @@
   }
 
   function itemCardHtml(it) {
+    var imgHtml = it.image ? '<img class="item-thumb" src="' + it.image + '" alt=""/>' : '';
     return '<div class="item-card type-' + it.type + '" data-action="detail" data-id="' + it.id + '">' +
+      (imgHtml ? '<div class="item-media">' + imgHtml + '</div>' : '') +
+      '<div class="item-body">' +
       '<div class="item-head">' +
         '<div class="item-name">' + esc(it.title) + '</div>' +
         typeBadge(it) + statusBadge(it) +
@@ -48,6 +52,7 @@
       (it.desc ? '<div class="item-desc">' + esc(it.desc) + '</div>' : '') +
       '<div class="item-foot"><span class="publisher">' + esc(it.contactName) + ' 发布</span>' +
       '<span class="badge badge-cat">' + esc(it.category) + '</span></div>' +
+      '</div>' +
     '</div>';
   }
 
@@ -233,17 +238,48 @@
       '<div class="form-group"><label>物品描述（可选）</label>' +
         '<textarea id="f-desc" maxlength="200" placeholder="描述物品特征，方便失主/拾到者辨认"></textarea>' +
         '<div class="form-error" data-for="desc"></div></div>' +
+      '<div class="form-group"><label>物品图片（可选）</label>' +
+        '<input id="f-image" type="file" accept="image/*"/>' +
+        '<div class="image-preview" id="f-image-preview" style="display:none">' +
+          '<img id="f-image-thumb" src="" alt="物品图片"/>' +
+          '<button type="button" class="btn btn-sm btn-ghost" data-action="remove-image" style="margin-top:6px">移除图片</button>' +
+        '</div>' +
+        '<div class="muted" style="font-size:12px;margin-top:4px">上传一张物品照片，帮助辨认（仅保存在本机浏览器）</div></div>' +
       '<div class="form-group"><label>联系方式 <span class="req">*</span></label>' +
         '<input id="f-contact" type="text" maxlength="20" placeholder="手机号 / QQ / 微信号，方便对方联系你"/>' +
         '<div class="form-error" data-for="contact"></div></div>' +
       '<div class="form-group"><label>昵称（可选）</label>' +
         '<input id="f-name" type="text" maxlength="12" placeholder="默认显示：匿名同学"/>' +
         '<div class="form-error" data-for="name"></div></div>' +
-      '<button class="btn btn-primary" data-action="submit-publish">立即发布</button>' +
+      '<div class="form-actions">' +
+        '<button class="btn btn-primary" data-action="submit-publish">立即发布</button>' +
+        '<button class="btn btn-ghost" data-action="submit-draft">存为草稿</button>' +
+      '</div>' +
       '<p class="muted" style="text-align:center;font-size:12px">发布成功后可在「我的发布」中修改状态或删除</p>' +
     '</div>';
     view.innerHTML = html;
     setHeader('发布信息', PublishState.type === C.TYPE_LOST ? '我正在寻找物品' : '我捡到了物品');
+
+    // 图片上传预览
+    var imgInput = document.getElementById('f-image');
+    if (imgInput) {
+      imgInput.addEventListener('change', function () {
+        var file = this.files && this.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { toast('图片不能超过 2MB'); this.value = ''; return; }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          PublishState.image = e.target.result;
+          var prev = document.getElementById('f-image-preview');
+          var thumb = document.getElementById('f-image-thumb');
+          if (prev && thumb) {
+            thumb.src = e.target.result;
+            prev.style.display = 'block';
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
   }
 
   /** 详情页 */
@@ -257,6 +293,7 @@
       return;
     }
     var done = it.status === C.STATUS_DONE;
+    var isDraft = it.status === C.STATUS_DRAFT;
     var statusText = C.statusLabel(it.status, it.type);
 
     var html = '<div class="detail">' +
@@ -265,22 +302,37 @@
         '<h2>' + esc(it.title) + '</h2>' +
         '<div class="meta">' + typeBadge(it) + ' ' + catBadge(it) + ' ' + statusBadge(it) + '</div>' +
         '<div class="meta">发布于 ' + C.formatTime(it.createdAt) + ' · ' + esc(it.contactName) + '</div>' +
-      '</div>' +
-      '<div class="detail-block"><h3>📋 物品信息</h3>' +
-        '<div class="detail-row"><span class="k">类　别</span><span class="v">' + esc(it.category) + '</span></div>' +
-        '<div class="detail-row"><span class="k">' + (it.type === C.TYPE_LOST ? '丢失地点' : '拾取地点') + '</span><span class="v">' + esc(it.location) + (it.place ? ' · ' + esc(it.place) : '') + '</span></div>' +
-        (it.happenedAt ? '<div class="detail-row"><span class="k">发生时间</span><span class="v">' + esc(it.happenedAt) + '</span></div>' : '') +
-        (it.desc ? '<div class="detail-row"><span class="k">物品描述</span><span class="v">' + esc(it.desc) + '</span></div>' : '') +
-      '</div>' +
-      '<div class="detail-block"><h3>👤 发布者</h3>' +
+      '</div>';
+
+    if (isDraft) {
+      html += '<div class="detail-block" style="background:#fff7ed;border:1px solid #fed7aa">' +
+        '<p style="text-align:center;color:#c2410c;margin:0">📝 这是草稿，其他同学看不到。完善信息后点下方按钮发布。</p>' +
+      '</div>';
+    }
+
+    html += '<div class="detail-block"><h3>📋 物品信息</h3>' +
+      (it.image ? '<img src="' + it.image + '" class="detail-img" alt="物品图片"/>' : '') +
+      '<div class="detail-row"><span class="k">类　别</span><span class="v">' + esc(it.category) + '</span></div>' +
+      '<div class="detail-row"><span class="k">' + (it.type === C.TYPE_LOST ? '丢失地点' : '拾取地点') + '</span><span class="v">' + esc(it.location || '未填写') + (it.place ? ' · ' + esc(it.place) : '') + '</span></div>' +
+      (it.happenedAt ? '<div class="detail-row"><span class="k">发生时间</span><span class="v">' + esc(it.happenedAt) + '</span></div>' : '') +
+      (it.desc ? '<div class="detail-row"><span class="k">物品描述</span><span class="v">' + esc(it.desc) + '</span></div>' : '') +
+    '</div>';
+
+    if (!isDraft) {
+      html += '<div class="detail-block"><h3>👤 发布者</h3>' +
         '<div class="detail-row"><span class="k">昵　称</span><span class="v">' + esc(it.contactName) + '</span></div>' +
         '<div class="detail-row"><span class="k">联系方式</span><span class="v">' + esc(it.contact) + '</span></div>' +
         '<button class="btn btn-primary contact-btn" data-action="copy-contact" data-value="' + esc(it.contact) + '">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>' +
           '一键复制联系方式</button>' +
       '</div>';
+    }
 
-    if (!done) {
+    if (isDraft) {
+      html += '<div class="detail-block"><h3>✅ 草稿操作</h3>' +
+        '<button class="btn btn-primary" data-action="publish-draft" data-id="' + it.id + '">立即发布此草稿</button>' +
+      '</div>';
+    } else if (!done) {
       html += '<div class="detail-block"><h3>✅ 信息状态</h3>' +
         '<p class="muted" style="margin-bottom:10px">如果这条信息已' + (it.type === C.TYPE_LOST ? '找到' : '归还') + '，发布者可以更新状态，避免他人重复询问。</p>' +
         '<button class="btn btn-green" data-action="mark-done" data-id="' + it.id + '">' +
@@ -317,16 +369,18 @@
   /** 我的发布页 */
   function renderMine() {
     var items = S.loadItems();
-    var mine = C.sortByTime(items); // 本地数据即"我发布的"
+    var mine = C.sortByTime(items);
     var state = MineState;
-    var list = C.filterItems(mine, state);
+    var list = C.filterItems(mine, Object.assign({ includeDraft: true }, state));
 
     var html = '<div class="section"><p class="muted">这里集中管理你发布的信息，可修改状态或删除。</p></div>' +
       '<div class="chips-row">' +
         chipHtml('全部', 'all', state.type === 'all', 'set-m-type') +
         chipHtml('寻物', C.TYPE_LOST, state.type === C.TYPE_LOST, 'set-m-type') +
         chipHtml('招领', C.TYPE_FOUND, state.type === C.TYPE_FOUND, 'set-m-type') +
+        chipHtml('进行中', 'open', state.status === 'open', 'set-m-status') +
         chipHtml('已结案', 'done', state.status === 'done', 'set-m-status') +
+        chipHtml('草稿', 'draft', state.status === 'draft', 'set-m-status') +
       '</div>';
 
     if (list.length === 0) {
@@ -336,15 +390,21 @@
     } else {
       html += '<div class="item-list">' + list.map(function (it) {
         var done = it.status === C.STATUS_DONE;
+        var isDraft = it.status === C.STATUS_DRAFT;
+        var actionBtns;
+        if (isDraft) {
+          actionBtns = '<button class="btn btn-sm btn-primary" data-action="publish-draft" data-id="' + it.id + '">发布</button>';
+        } else if (done) {
+          actionBtns = '<button class="btn btn-sm btn-ghost" data-action="reopen" data-id="' + it.id + '">重新开放</button>';
+        } else {
+          actionBtns = '<button class="btn btn-sm btn-green" data-action="mark-done" data-id="' + it.id + '">' +
+            (it.type === C.TYPE_LOST ? '标记已找到' : '标记已归还') + '</button>';
+        }
         return '<div class="item-card type-' + it.type + '" data-action="detail" data-id="' + it.id + '">' +
           '<div class="item-head"><div class="item-name">' + esc(it.title) + '</div>' + typeBadge(it) + statusBadge(it) + '</div>' +
-          '<div class="item-loc">📍 ' + esc(it.location) + '</div>' +
+          '<div class="item-loc">📍 ' + esc(it.location || '未填写地点') + '</div>' +
           '<div class="item-time">🕒 ' + C.formatTime(it.createdAt) + '</div>' +
-          '<div class="mine-actions">' +
-            (done
-              ? '<button class="btn btn-sm btn-ghost" data-action="reopen" data-id="' + it.id + '">重新开放</button>'
-              : '<button class="btn btn-sm ' + (it.type === C.TYPE_LOST ? 'btn-green' : 'btn-green') + '" data-action="mark-done" data-id="' + it.id + '">' +
-                (it.type === C.TYPE_LOST ? '标记已找到' : '标记已归还') + '</button>') +
+          '<div class="mine-actions">' + actionBtns +
             '<button class="btn btn-sm btn-danger" data-action="ask-delete" data-id="' + it.id + '" data-title="' + esc(it.title) + '">删除</button>' +
           '</div>' +
         '</div>';
@@ -376,7 +436,7 @@
   /* ---------------- 页面状态 ---------------- */
   var HomeState = { category: 'all', type: 'all' };
   var SearchState = { keyword: '', type: 'all' };
-  var PublishState = { type: C.TYPE_LOST, category: '证件卡类' };
+  var PublishState = { type: C.TYPE_LOST, category: '证件卡类', image: '' };
   var MineState = { type: 'all', status: 'all' };
 
   /* ---------------- 路由 ---------------- */
@@ -423,7 +483,7 @@
       case 'set-s-type': SearchState.type = val; renderSearch(); break;
       case 'set-m-type': MineState.type = val; renderMine(); break;
       case 'set-m-status':
-        MineState.status = (val === 'done') ? C.STATUS_DONE : 'all';
+        MineState.status = val;
         renderMine(); break;
       case 'set-p-type': PublishState.type = val; renderPublish(); break;
       case 'hot-search': SearchState.keyword = val; S.addHistory(val); renderSearch(); break;
@@ -467,7 +527,28 @@
           renderMine();
         });
         break;
+      case 'publish-draft': {
+        var itemsD = S.loadItems();
+        var itD = C.getItemById(itemsD, id);
+        if (!itD) { toast('草稿不存在'); return; }
+        showConfirm('发布这条草稿？', '发布后其他同学将看到这条信息。', function () {
+          var published = C.updateStatus(itD, C.STATUS_OPEN);
+          S.saveItems(itemsD.map(function (x) { return x.id === id ? published : x; }));
+          toast('草稿已发布');
+          renderMine();
+        });
+        break;
+      }
       case 'submit-publish': submitPublish(); break;
+      case 'submit-draft': submitDraft(); break;
+      case 'remove-image':
+        PublishState.image = '';
+        var prev = document.getElementById('f-image-preview');
+        var imgInput = document.getElementById('f-image');
+        if (prev) prev.style.display = 'none';
+        if (imgInput) imgInput.value = '';
+        toast('已移除图片');
+        break;
       default: break;
     }
   });
@@ -483,11 +564,11 @@
       happenedAt: document.getElementById('f-time').value,
       desc: document.getElementById('f-desc').value,
       contact: document.getElementById('f-contact').value,
-      contactName: document.getElementById('f-name').value
+      contactName: document.getElementById('f-name').value,
+      image: PublishState.image || ''
     };
     var r = C.validatePublish(fields);
     if (!r.ok) {
-      // 清空并回填错误
       document.querySelectorAll('.form-error').forEach(function (el) { el.textContent = ''; });
       Object.keys(r.errors).forEach(function (k) {
         var box = document.querySelector('.form-error[data-for="' + k + '"]');
@@ -500,8 +581,34 @@
     var item = C.createItem(fields);
     items.unshift(item);
     S.saveItems(items);
-    PublishState = { type: C.TYPE_LOST, category: '证件卡类' }; // 重置
+    PublishState = { type: C.TYPE_LOST, category: '证件卡类', image: '' };
     navigate('done', item.id);
+  }
+
+  /** 存为草稿（只校验物品名称） */
+  function submitDraft() {
+    var title = (document.getElementById('f-title') || {}).value || '';
+    if (!title.trim()) { toast('草稿至少需要填物品名称'); return; }
+    var fields = {
+      type: PublishState.type,
+      category: (document.getElementById('f-category') || {}).value || '其他',
+      title: title,
+      location: (document.getElementById('f-location') || {}).value || '',
+      place: (document.getElementById('f-place') || {}).value || '',
+      happenedAt: (document.getElementById('f-time') || {}).value || '',
+      desc: (document.getElementById('f-desc') || {}).value || '',
+      contact: (document.getElementById('f-contact') || {}).value || '',
+      contactName: (document.getElementById('f-name') || {}).value || '',
+      image: PublishState.image || '',
+      status: C.STATUS_DRAFT
+    };
+    var items = S.loadItems();
+    var item = C.createItem(fields);
+    items.unshift(item);
+    S.saveItems(items);
+    toast('已存为草稿，可在「我的发布」中继续编辑或发布');
+    PublishState = { type: C.TYPE_LOST, category: '证件卡类', image: '' };
+    navigate('mine');
   }
 
   /** 确认弹窗 */

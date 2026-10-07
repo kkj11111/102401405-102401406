@@ -11,6 +11,7 @@
   var TYPE_FOUND = 'found';    // 招领
   var STATUS_OPEN = 'open';    // 进行中
   var STATUS_DONE = 'done';    // 已找到 / 已归还
+  var STATUS_DRAFT = 'draft';  // 草稿（仅自己可见）
 
   /** 生成唯一 id：时间戳36进制 + 随机后缀 */
   function genId(now) {
@@ -20,7 +21,7 @@
 
   /**
    * 根据表单字段创建一条信息
-   * @param {Object} fields {type, category, title, desc, location, place, happenedAt, contact, contactName}
+   * @param {Object} fields {type, category, title, desc, location, place, happenedAt, contact, contactName, image, status}
    * @param {number} [now] 时间戳，测试时注入
    */
   function createItem(fields, now) {
@@ -36,7 +37,8 @@
       happenedAt: fields.happenedAt || '',
       contact: String(fields.contact || '').trim(),
       contactName: String(fields.contactName || '').trim() || '匿名同学',
-      status: STATUS_OPEN,
+      image: String(fields.image || ''),
+      status: fields.status || STATUS_OPEN,
       createdAt: ts,
       updatedAt: ts
     };
@@ -78,8 +80,9 @@
 
   /**
    * 过滤信息：关键词（物品名/地点/描述/昵称）+ 类型 + 类别 + 状态
+   * 默认排除草稿（草稿仅在"我的发布"显示）；传 includeDraft=true 可包含草稿
    * @param {Array} items
-   * @param {Object} opts {keyword, type, category, status}，'all' 或空表示不过滤
+   * @param {Object} opts {keyword, type, category, status, includeDraft}，'all' 或空表示不过滤
    */
   function filterItems(items, opts) {
     var o = opts || {};
@@ -88,6 +91,7 @@
     var category = o.category || 'all';
     var status = o.status || 'all';
     var list = (items || []).filter(function (it) {
+      if (!o.includeDraft && it.status === STATUS_DRAFT) return false;
       if (type !== 'all' && it.type !== type) return false;
       if (category !== 'all' && it.category !== category) return false;
       if (status !== 'all' && it.status !== status) return false;
@@ -105,12 +109,13 @@
 
   /** 更新状态，返回新对象（不改原对象）；非法输入返回 null */
   function updateStatus(item, status) {
-    if (!item || (status !== STATUS_OPEN && status !== STATUS_DONE)) return null;
+    if (!item || (status !== STATUS_OPEN && status !== STATUS_DONE && status !== STATUS_DRAFT)) return null;
     if (item.status === status) return item;
     return {
       id: item.id, type: item.type, category: item.category,
       title: item.title, desc: item.desc, location: item.location, place: item.place,
       happenedAt: item.happenedAt, contact: item.contact, contactName: item.contactName,
+      image: item.image || '',
       status: status, createdAt: item.createdAt, updatedAt: Date.now()
     };
   }
@@ -142,12 +147,12 @@
     return (d.getMonth() + 1) + '月' + d.getDate() + '日';
   }
 
-  /** 首页统计：今日新增 / 累计找回(归还) / 归还成功率 */
+  /** 首页统计：今日新增 / 累计找回(归还) / 归还成功率（不计草稿） */
   function calcStats(items, now) {
     var base = now || Date.now();
     var nowD = new Date(base);
     var todayStart = new Date(nowD.getFullYear(), nowD.getMonth(), nowD.getDate()).getTime();
-    var list = items || [];
+    var list = (items || []).filter(function (it) { return it.status !== STATUS_DRAFT; });
     var today = list.filter(function (it) { return it.createdAt >= todayStart; }).length;
     var done = list.filter(function (it) { return it.status === STATUS_DONE; }).length;
     var rate = list.length ? Math.round(done / list.length * 100) : 0;
@@ -162,9 +167,10 @@
   /** 类型标签：寻物 / 招领 */
   function typeLabel(type) { return type === TYPE_LOST ? '寻物' : '招领'; }
 
-  /** 状态标签：已找到 / 已归还 / 空 */
+  /** 状态标签：已找到 / 已归还 / 草稿 / 空 */
   function statusLabel(status, type) {
     if (status === STATUS_DONE) return type === TYPE_LOST ? '已找到' : '已归还';
+    if (status === STATUS_DRAFT) return '草稿';
     return '';
   }
 
@@ -172,7 +178,7 @@
   var api = {
     CATEGORIES: CATEGORIES,
     TYPE_LOST: TYPE_LOST, TYPE_FOUND: TYPE_FOUND,
-    STATUS_OPEN: STATUS_OPEN, STATUS_DONE: STATUS_DONE,
+    STATUS_OPEN: STATUS_OPEN, STATUS_DONE: STATUS_DONE, STATUS_DRAFT: STATUS_DRAFT,
     genId: genId,
     createItem: createItem,
     validatePublish: validatePublish,
