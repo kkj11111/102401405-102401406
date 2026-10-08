@@ -104,37 +104,118 @@
 
   /* ---------------- 视图模板 ---------------- */
 
+  /** 地点关键词分组 */
+  var PLACE_GROUPS = {
+    '教学楼': ['教学楼', '教室', '东', '西', '教学'],
+    '宿舍区': ['宿舍'],
+    '食堂': ['食堂'],
+    '图书馆': ['图书馆'],
+    '运动场': ['体育', '运动', '操场', '篮球', '球场']
+  };
+  function matchPlace(location, place) {
+    if (place === 'all') return true;
+    if (place === '其他') {
+      // 不匹配任何已知分组
+      var loc = location || '';
+      return !Object.keys(PLACE_GROUPS).some(function (g) {
+        return PLACE_GROUPS[g].some(function (kw) { return loc.indexOf(kw) !== -1; });
+      });
+    }
+    var kws = PLACE_GROUPS[place] || [];
+    return kws.some(function (kw) { return (location || '').indexOf(kw) !== -1; });
+  }
+
   /** 首页 */
   function renderHome() {
-    var items = C.sortByTime(S.loadItems());
+    var all = C.sortByTime(S.loadItems());
     var state = HomeState;
-    var stats = C.calcStats(items);
-    var list = C.filterItems(items, state);
 
-    var html = '<div class="stats">' +
-      '<div class="stat"><b>' + stats.today + '</b><span>今日新增</span></div>' +
-      '<div class="stat"><b>' + stats.done + '</b><span>累计找回/归还</span></div>' +
-      '<div class="stat"><b>' + stats.rate + '%</b><span>归还成功率</span></div>' +
+    // 先按 type/category/status/keyword 过滤（复用 core.filterItems）
+    var list = C.filterItems(all, {
+      type: state.type,
+      category: state.category,
+      status: state.status === 'open' ? 'open' : (state.status === 'done' ? 'done' : 'all'),
+      keyword: state.keyword
+    });
+    // 再按地点过滤
+    if (state.place !== 'all') {
+      list = list.filter(function (it) { return matchPlace(it.location, state.place); });
+    }
+
+    // 顶部统计：基于筛选后的列表
+    var total = list.length;
+    var solved = list.filter(function (it) { return it.status === C.STATUS_DONE; }).length;
+    var unsolved = total - solved;
+    var rate = total ? Math.round(solved / total * 100) : 0;
+
+    var html = '<div class="stats stats-4">' +
+      '<div class="stat"><b>' + total + '</b><span>全部信息</span></div>' +
+      '<div class="stat"><b>' + unsolved + '</b><span>待解决</span></div>' +
+      '<div class="stat"><b>' + solved + '</b><span>已解决</span></div>' +
+      '<div class="stat"><b>' + rate + '%</b><span>解决率</span></div>' +
     '</div>';
 
-    html += '<div class="chips">' +
-      chipHtml('全部', 'all', state.category === 'all', 'set-cat') +
-      C.CATEGORIES.map(function (c) { return chipHtml(c, c, state.category === c, 'set-cat'); }).join('') +
-    '</div>';
-    html += '<div class="chips-row">' +
-      chipHtml('全部', 'all', state.type === 'all', 'set-type') +
-      chipHtml('寻物', C.TYPE_LOST, state.type === C.TYPE_LOST, 'set-type') +
-      chipHtml('招领', C.TYPE_FOUND, state.type === C.TYPE_FOUND, 'set-type') +
-    '</div>';
+    // 搜索框
+    html += '<div class="search-area" style="padding:0 0 12px">' +
+      '<div class="search-box">' +
+        '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>' +
+        '<input id="home-search" type="text" placeholder="搜索物品名称、地点或关键字" value="' + esc(state.keyword) + '" autocomplete="off"/>' +
+        (state.keyword ? '<button class="clear" data-action="clear-home-search" aria-label="清空">✕</button>' : '') +
+      '</div></div>';
+
+    // 筛选卡片容器
+    html += '<div class="filter-card">';
+
+    // 类型标签
+    html += '<div class="filter-group"><span class="filter-label">类型</span><div class="chips-row">' +
+      chipHtml('全部', 'all', state.type === 'all', 'set-h-type') +
+      chipHtml('寻物', C.TYPE_LOST, state.type === C.TYPE_LOST, 'set-h-type') +
+      chipHtml('招领', C.TYPE_FOUND, state.type === C.TYPE_FOUND, 'set-h-type') +
+    '</div></div>';
+
+    // 类别行
+    html += '<div class="filter-group"><span class="filter-label">类别</span><div class="chips">' +
+      chipHtml('全部', 'all', state.category === 'all', 'set-h-cat') +
+      C.CATEGORIES.map(function (c) { return chipHtml(c, c, state.category === c, 'set-h-cat'); }).join('') +
+    '</div></div>';
+
+    // 地点行
+    var places = ['all', '教学楼', '宿舍区', '食堂', '图书馆', '运动场', '其他'];
+    html += '<div class="filter-group"><span class="filter-label">地点</span><div class="chips">' +
+      places.map(function (p) { return chipHtml(p === 'all' ? '全部' : p, p, state.place === p, 'set-h-place'); }).join('') +
+    '</div></div>';
+
+    // 状态行 + 重置
+    html += '<div class="filter-group"><span class="filter-label">状态</span><div class="chips-row">' +
+      chipHtml('全部', 'all', state.status === 'all', 'set-h-status') +
+      chipHtml('未解决', 'open', state.status === 'open', 'set-h-status') +
+      chipHtml('已解决', 'done', state.status === 'done', 'set-h-status') +
+      '<span style="flex:1"></span>' +
+      '<span class="chip chip-reset" data-action="reset-filter">↺ 重置</span>' +
+    '</div></div>';
+
+    html += '</div>'; // /filter-card
 
     if (list.length === 0) {
-      html += '<div class="item-list">' + emptyHtml('🔍', '暂无相关信息', '换个分类看看，或发布一条寻物/招领信息。',
-        '<button class="btn btn-primary" data-action="go-publish">去发布信息</button>') + '</div>';
+      html += '<div class="item-list">' + emptyHtml('🔍', '没有找到符合条件的信息',
+        '换个关键词或筛选条件试试。') + '</div>';
     } else {
       html += '<div class="item-list">' + list.map(itemCardHtml).join('') + '</div>';
     }
     view.innerHTML = html;
     setHeader('校园失物招领', '福州大学 · 旗山校区');
+
+    // 搜索框事件
+    var hs = document.getElementById('home-search');
+    if (hs) {
+      hs.addEventListener('input', function () {
+        HomeState.keyword = hs.value.trim();
+        renderHome();
+        // 保持焦点和光标位置
+        var input = document.getElementById('home-search');
+        if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+      });
+    }
   }
 
   /** 搜索页 */
@@ -434,7 +515,7 @@
   }
 
   /* ---------------- 页面状态 ---------------- */
-  var HomeState = { category: 'all', type: 'all' };
+  var HomeState = { category: 'all', type: 'all', place: 'all', status: 'all', keyword: '' };
   var SearchState = { keyword: '', type: 'all' };
   var PublishState = { type: C.TYPE_LOST, category: '证件卡类', image: '' };
   var MineState = { type: 'all', status: 'all' };
@@ -478,8 +559,16 @@
     var val = target.getAttribute('data-value');
 
     switch (action) {
-      case 'set-cat': HomeState.category = val; renderHome(); break;
-      case 'set-type': HomeState.type = val; renderHome(); break;
+      case 'set-h-cat': HomeState.category = val; renderHome(); break;
+      case 'set-h-type': HomeState.type = val; renderHome(); break;
+      case 'set-h-place': HomeState.place = val; renderHome(); break;
+      case 'set-h-status': HomeState.status = val; renderHome(); break;
+      case 'reset-filter':
+        HomeState = { category: 'all', type: 'all', place: 'all', status: 'all', keyword: '' };
+        renderHome(); break;
+      case 'clear-home-search':
+        HomeState.keyword = '';
+        renderHome(); break;
       case 'set-s-type': SearchState.type = val; renderSearch(); break;
       case 'set-m-type': MineState.type = val; renderMine(); break;
       case 'set-m-status':
