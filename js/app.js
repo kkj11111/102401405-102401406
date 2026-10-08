@@ -378,6 +378,9 @@
         chipHtml('全部', 'all', state.type === 'all', 'set-m-type') +
         chipHtml('寻物', C.TYPE_LOST, state.type === C.TYPE_LOST, 'set-m-type') +
         chipHtml('招领', C.TYPE_FOUND, state.type === C.TYPE_FOUND, 'set-m-type') +
+      '</div>' +
+      '<div class="chips-row">' +
+        chipHtml('全部状态', 'all', state.status === 'all', 'set-m-status') +
         chipHtml('进行中', 'open', state.status === 'open', 'set-m-status') +
         chipHtml('已结案', 'done', state.status === 'done', 'set-m-status') +
         chipHtml('草稿', 'draft', state.status === 'draft', 'set-m-status') +
@@ -401,11 +404,13 @@
             (it.type === C.TYPE_LOST ? '标记已找到' : '标记已归还') + '</button>';
         }
         return '<div class="item-card type-' + it.type + '" data-action="detail" data-id="' + it.id + '">' +
+          '<div class="item-body">' +
           '<div class="item-head"><div class="item-name">' + esc(it.title) + '</div>' + typeBadge(it) + statusBadge(it) + '</div>' +
           '<div class="item-loc">📍 ' + esc(it.location || '未填写地点') + '</div>' +
           '<div class="item-time">🕒 ' + C.formatTime(it.createdAt) + '</div>' +
           '<div class="mine-actions">' + actionBtns +
             '<button class="btn btn-sm btn-danger" data-action="ask-delete" data-id="' + it.id + '" data-title="' + esc(it.title) + '">删除</button>' +
+          '</div>' +
           '</div>' +
         '</div>';
       }).join('') + '</div>';
