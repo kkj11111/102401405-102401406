@@ -38,20 +38,39 @@
     return '<span class="badge badge-cat">' + esc(item.category) + '</span>';
   }
 
+  /** 根据类别返回对应 emoji 插画 */
+  function categoryIcon(category, title) {
+    var t = (title || '') + (category || '');
+    if (/校园卡|学生证|身份证|卡/.test(t)) return '🪪';
+    if (/耳机|AirPods|充电|手机|电脑|平板|电子/.test(t)) return '🎧';
+    if (/钥匙/.test(t)) return '🔑';
+    if (/伞/.test(t)) return '☂️';
+    if (/杯|水/.test(t)) return '🥤';
+    if (/书/.test(t)) return '📚';
+    if (/衣物|衣|外套|包/.test(t)) return '🎒';
+    return '📦';
+  }
+
   function itemCardHtml(it) {
-    var imgHtml = it.image ? '<img class="item-thumb" src="' + it.image + '" alt=""/>' : '';
-    return '<div class="item-card type-' + it.type + '" data-action="detail" data-id="' + it.id + '">' +
-      (imgHtml ? '<div class="item-media">' + imgHtml + '</div>' : '') +
-      '<div class="item-body">' +
-      '<div class="item-head">' +
-        '<div class="item-name">' + esc(it.title) + '</div>' +
-        typeBadge(it) + statusBadge(it) +
+    var icon = categoryIcon(it.category, it.title);
+    var typeLabel = it.type === C.TYPE_LOST ? '寻物' : '招领';
+    var typeCls = it.type === C.TYPE_LOST ? 'mini-tag-lost' : 'mini-tag-found';
+    var statusCls = it.status === C.STATUS_DONE ? '<span class="mini-tag mini-tag-done">已解决</span>' : '';
+    return '<div class="item-card-v2 type-' + it.type + '" data-action="detail" data-id="' + it.id + '">' +
+      '<div class="card-icon-box">' +
+        (it.image ? '<img src="' + it.image + '" style="width:100%;height:100%;object-fit:cover;border-radius:12px"/>' : '<span class="card-icon-emoji">' + icon + '</span>') +
       '</div>' +
-      '<div class="item-loc">📍 ' + esc(it.location) + (it.place ? ' · ' + esc(it.place) : '') + '</div>' +
-      '<div class="item-time">🕒 ' + C.formatTime(it.createdAt) + ' · ' + esc(it.contactName) + '</div>' +
-      (it.desc ? '<div class="item-desc">' + esc(it.desc) + '</div>' : '') +
-      '<div class="item-foot"><span class="publisher">' + esc(it.contactName) + ' 发布</span>' +
-      '<span class="badge badge-cat">' + esc(it.category) + '</span></div>' +
+      '<div class="card-info">' +
+        '<div class="card-info-top">' +
+          '<span class="card-title">' + esc(it.title) + '</span>' +
+          '<span class="mini-tag ' + typeCls + '">' + typeLabel + '</span>' +
+          statusCls +
+        '</div>' +
+        (it.desc ? '<div class="card-desc">' + esc(it.desc) + '</div>' : '') +
+        '<div class="card-meta">' +
+          '<span>📍 ' + esc(it.location || '未填写') + '</span>' +
+          '<span>' + C.formatTime(it.createdAt) + '</span>' +
+        '</div>' +
       '</div>' +
     '</div>';
   }
@@ -148,53 +167,55 @@
     var unsolved = total - solved;
     var rate = total ? Math.round(solved / total * 100) : 0;
 
-    var html = '<div class="stats stats-4">' +
-      '<div class="stat"><b>' + total + '</b><span>全部信息</span></div>' +
-      '<div class="stat"><b>' + unsolved + '</b><span>待解决</span></div>' +
-      '<div class="stat"><b>' + solved + '</b><span>已解决</span></div>' +
-      '<div class="stat"><b>' + rate + '%</b><span>解决率</span></div>' +
+    var html = '<div class="stats-4">' +
+      '<div class="stat-box stat-blue1"><b>' + total + '</b><span>全部信息</span></div>' +
+      '<div class="stat-box stat-blue2"><b>' + unsolved + '</b><span>待解决</span></div>' +
+      '<div class="stat-box stat-blue3"><b>' + solved + '</b><span>已解决</span></div>' +
+      '<div class="stat-box stat-blue4"><b>' + rate + '%</b><span>解决率</span></div>' +
     '</div>';
 
     // 搜索框
-    html += '<div class="search-area" style="padding:0 0 12px">' +
+    html += '<div class="search-area">' +
       '<div class="search-box">' +
         '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>' +
-        '<input id="home-search" type="text" placeholder="搜索物品名称、地点或关键字" value="' + esc(state.keyword) + '" autocomplete="off"/>' +
+        '<input id="home-search" type="text" placeholder="搜索物品名称或描述，如：校园卡" value="' + esc(state.keyword) + '" autocomplete="off"/>' +
         (state.keyword ? '<button class="clear" data-action="clear-home-search" aria-label="清空">✕</button>' : '') +
       '</div></div>';
 
-    // 筛选卡片容器
-    html += '<div class="filter-card">';
+    // 筛选卡片
+    html += '<div class="filter-card-v2">' +
+      '<h3 class="filter-title">快速筛选</h3>';
 
-    // 类型标签
-    html += '<div class="filter-group"><span class="filter-label">类型</span><div class="chips-row">' +
+    // 类型行
+    html += '<div class="filter-row"><span class="filter-cat">类型</span><div class="chips-row">' +
       chipHtml('全部', 'all', state.type === 'all', 'set-h-type') +
       chipHtml('寻物', C.TYPE_LOST, state.type === C.TYPE_LOST, 'set-h-type') +
       chipHtml('招领', C.TYPE_FOUND, state.type === C.TYPE_FOUND, 'set-h-type') +
     '</div></div>';
 
     // 类别行
-    html += '<div class="filter-group"><span class="filter-label">类别</span><div class="chips">' +
+    html += '<div class="filter-row"><span class="filter-cat">类别</span><div class="chips">' +
       chipHtml('全部', 'all', state.category === 'all', 'set-h-cat') +
       C.CATEGORIES.map(function (c) { return chipHtml(c, c, state.category === c, 'set-h-cat'); }).join('') +
     '</div></div>';
 
     // 地点行
     var places = ['all', '教学楼', '宿舍区', '食堂', '图书馆', '运动场', '其他'];
-    html += '<div class="filter-group"><span class="filter-label">地点</span><div class="chips">' +
+    html += '<div class="filter-row"><span class="filter-cat">地点</span><div class="chips">' +
       places.map(function (p) { return chipHtml(p === 'all' ? '全部' : p, p, state.place === p, 'set-h-place'); }).join('') +
     '</div></div>';
 
     // 状态行 + 重置
-    html += '<div class="filter-group"><span class="filter-label">状态</span><div class="chips-row">' +
+    html += '<div class="filter-row"><span class="filter-cat">状态</span><div class="chips-row">' +
       chipHtml('全部', 'all', state.status === 'all', 'set-h-status') +
       chipHtml('未解决', 'open', state.status === 'open', 'set-h-status') +
       chipHtml('已解决', 'done', state.status === 'done', 'set-h-status') +
-      '<span style="flex:1"></span>' +
-      '<span class="chip chip-reset" data-action="reset-filter">↺ 重置</span>' +
     '</div></div>';
 
-    html += '</div>'; // /filter-card
+    html += '<div class="filter-reset-row"><span class="chip chip-reset-v2" data-action="reset-filter">重置筛选 ▾</span></div>';
+    html += '</div>'; // /filter-card-v2
+
+    html += '<div class="result-count">共 <b>' + list.length + '</b> 条结果</div>';
 
     if (list.length === 0) {
       html += '<div class="item-list">' + emptyHtml('🔍', '没有找到符合条件的信息',
