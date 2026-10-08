@@ -292,3 +292,66 @@ body {
   background: #fef3c7;
   color: #92400e;
 }
+
+/* ===== 首页筛选增强 ===== */
+.stats-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.stats-4 .stat b {
+  font-size: 22px;
+}
+.stats-4 .stat span {
+  font-size: 11px;
+}
+.chip-reset {
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 16px;
+}
+.chip-reset:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+/* ===== 首页筛选卡片 ===== */
+.filter-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.filter-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+}
+.filter-group + .filter-group {
+  border-top: 1px solid #f1f5f9;
+}
+.filter-label {
+  flex-shrink: 0;
+  width: 36px;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 28px;
+  font-weight: 500;
+}
+.filter-group .chips,
+.filter-group .chips-row {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.filter-group .chip {
+  font-size: 12px;
+  padding: 4px 12px;
+}
