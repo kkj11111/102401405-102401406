@@ -400,7 +400,7 @@
 
     var html = '<div class="detail">' +
       '<div class="detail-hero type-' + it.type + '">' +
-        '<div class="icon">' + (it.type === C.TYPE_LOST ? '🔶' : '🟢') + '</div>' +
+        '<div class="icon">' + (it.image ? '<img src="' + it.image + '" style="width:72px;height:72px;object-fit:cover;border-radius:50%;vertical-align:middle" alt="物品图片"/>' : categoryIcon(it.category, it.title)) + '</div>' +
         '<h2>' + esc(it.title) + '</h2>' +
         '<div class="meta">' + typeBadge(it) + ' ' + catBadge(it) + ' ' + statusBadge(it) + '</div>' +
         '<div class="meta">发布于 ' + C.formatTime(it.createdAt) + ' · ' + esc(it.contactName) + '</div>' +
