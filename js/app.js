@@ -41,9 +41,9 @@
   /** 根据类别返回对应 emoji 插画 */
   function categoryIcon(category, title) {
     var t = (title || '') + (category || '');
+    if (/钥匙/.test(t)) return '🔑';
     if (/校园卡|学生证|身份证|卡/.test(t)) return '🪪';
     if (/耳机|AirPods|充电|手机|电脑|平板|电子/.test(t)) return '🎧';
-    if (/钥匙/.test(t)) return '🔑';
     if (/伞/.test(t)) return '☂️';
     if (/杯|水/.test(t)) return '🥤';
     if (/书/.test(t)) return '📚';
