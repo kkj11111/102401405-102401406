@@ -41,9 +41,9 @@
   /** 根据类别返回对应 emoji 插画 */
   function categoryIcon(category, title) {
     var t = (title || '') + (category || '');
+    if (/钥匙/.test(t)) return '🔑';
     if (/校园卡|学生证|身份证|卡/.test(t)) return '🪪';
     if (/耳机|AirPods|充电|手机|电脑|平板|电子/.test(t)) return '🎧';
-    if (/钥匙/.test(t)) return '🔑';
     if (/伞/.test(t)) return '☂️';
     if (/杯|水/.test(t)) return '🥤';
     if (/书/.test(t)) return '📚';
@@ -335,7 +335,7 @@
         '<input id="f-place" type="text" maxlength="30" placeholder="如：301 教室讲台抽屉"/>' +
         '<div class="form-error" data-for="place"></div></div>' +
       '<div class="form-group"><label>发生时间（可选）</label>' +
-        '<input id="f-time" type="datetime-local"/>' +
+        '<input id="f-time" type="datetime-local" lang="zh-CN"/>' +
         '<div class="form-error" data-for="time"></div></div>' +
       '<div class="form-group"><label>物品描述（可选）</label>' +
         '<textarea id="f-desc" maxlength="200" placeholder="描述物品特征，方便失主/拾到者辨认"></textarea>' +
@@ -400,7 +400,7 @@
 
     var html = '<div class="detail">' +
       '<div class="detail-hero type-' + it.type + '">' +
-        '<div class="icon">' + (it.type === C.TYPE_LOST ? '🔶' : '🟢') + '</div>' +
+        '<div class="icon">' + (it.image ? '<img src="' + it.image + '" style="width:72px;height:72px;object-fit:cover;border-radius:50%;vertical-align:middle" alt="物品图片"/>' : categoryIcon(it.category, it.title)) + '</div>' +
         '<h2>' + esc(it.title) + '</h2>' +
         '<div class="meta">' + typeBadge(it) + ' ' + catBadge(it) + ' ' + statusBadge(it) + '</div>' +
         '<div class="meta">发布于 ' + C.formatTime(it.createdAt) + ' · ' + esc(it.contactName) + '</div>' +
@@ -441,7 +441,7 @@
           '标记为“' + (it.type === C.TYPE_LOST ? '已找到' : '已归还') + '”</button>' +
       '</div>';
     } else {
-      html += '<div class="detail-block" style="background:var(--done-light)"><h3>✅ 已结案</h3>' +
+      html += '<div class="detail-block" style="background:var(--done-light)"><h3>✅ 已完成</h3>' +
         '<p class="muted">这条信息已标记为“' + statusText + '”，请在「我的发布」中管理。</p>' +
       '</div>';
     }
@@ -470,7 +470,7 @@
 
   /** 我的发布页 */
   function renderMine() {
-    var items = S.loadItems();
+    var items = S.loadItems().filter(function (it) { return it.mine === true; });
     var mine = C.sortByTime(items);
     var state = MineState;
     var list = C.filterItems(mine, Object.assign({ includeDraft: true }, state));
@@ -484,7 +484,7 @@
       '<div class="chips-row">' +
         chipHtml('全部状态', 'all', state.status === 'all', 'set-m-status') +
         chipHtml('进行中', 'open', state.status === 'open', 'set-m-status') +
-        chipHtml('已结案', 'done', state.status === 'done', 'set-m-status') +
+        chipHtml('已完成', 'done', state.status === 'done', 'set-m-status') +
         chipHtml('草稿', 'draft', state.status === 'draft', 'set-m-status') +
       '</div>';
 
@@ -560,6 +560,7 @@
   }
 
   function route() {
+    window.scrollTo(0, 0);
     var r = parseHash();
     switch (r.page) {
       case 'search': renderSearch(); break;
@@ -635,13 +636,15 @@
         renderMine();
         break;
       }
-      case 'ask-delete':
-        showConfirm('删除这条信息？', '“' + val + '”删除后不可恢复。', function () {
+      case 'ask-delete': {
+        var itDel = C.getItemById(S.loadItems(), id);
+        showConfirm('删除这条信息？', '“' + (itDel ? itDel.title : '') + '”删除后不可恢复。', function () {
           S.saveItems(C.removeItem(S.loadItems(), id));
           toast('已删除');
           renderMine();
         });
         break;
+      }
       case 'publish-draft': {
         var itemsD = S.loadItems();
         var itD = C.getItemById(itemsD, id);
@@ -680,7 +683,8 @@
       desc: document.getElementById('f-desc').value,
       contact: document.getElementById('f-contact').value,
       contactName: document.getElementById('f-name').value,
-      image: PublishState.image || ''
+      image: PublishState.image || '',
+      mine: true
     };
     var r = C.validatePublish(fields);
     if (!r.ok) {
@@ -715,7 +719,8 @@
       contact: (document.getElementById('f-contact') || {}).value || '',
       contactName: (document.getElementById('f-name') || {}).value || '',
       image: PublishState.image || '',
-      status: C.STATUS_DRAFT
+      status: C.STATUS_DRAFT,
+      mine: true
     };
     var items = S.loadItems();
     var item = C.createItem(fields);

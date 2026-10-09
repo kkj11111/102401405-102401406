@@ -39,6 +39,7 @@
       contactName: String(fields.contactName || '').trim() || '匿名同学',
       image: String(fields.image || ''),
       status: fields.status || STATUS_OPEN,
+      mine: fields.mine === true,
       createdAt: ts,
       updatedAt: ts
     };
