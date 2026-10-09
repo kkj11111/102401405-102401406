@@ -560,6 +560,7 @@
   }
 
   function route() {
+    window.scrollTo(0, 0);
     var r = parseHash();
     switch (r.page) {
       case 'search': renderSearch(); break;
