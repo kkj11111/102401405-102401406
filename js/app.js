@@ -470,7 +470,7 @@
 
   /** 我的发布页 */
   function renderMine() {
-    var items = S.loadItems();
+    var items = S.loadItems().filter(function (it) { return it.mine === true; });
     var mine = C.sortByTime(items);
     var state = MineState;
     var list = C.filterItems(mine, Object.assign({ includeDraft: true }, state));
@@ -683,7 +683,8 @@
       desc: document.getElementById('f-desc').value,
       contact: document.getElementById('f-contact').value,
       contactName: document.getElementById('f-name').value,
-      image: PublishState.image || ''
+      image: PublishState.image || '',
+      mine: true
     };
     var r = C.validatePublish(fields);
     if (!r.ok) {
@@ -718,7 +719,8 @@
       contact: (document.getElementById('f-contact') || {}).value || '',
       contactName: (document.getElementById('f-name') || {}).value || '',
       image: PublishState.image || '',
-      status: C.STATUS_DRAFT
+      status: C.STATUS_DRAFT,
+      mine: true
     };
     var items = S.loadItems();
     var item = C.createItem(fields);
