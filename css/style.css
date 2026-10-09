@@ -691,3 +691,77 @@ body {
   color: #2563eb;
   font-size: 15px;
 }
+
+/* ========== 我的发布页美化 ========== */
+.mine-profile {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  margin: -12px -16px 16px;
+  padding: 28px 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.mine-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.4);
+}
+.mine-info { flex: 1; }
+.mine-name { color: #fff; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.mine-sub { color: rgba(255,255,255,0.8); font-size: 13px; }
+
+.mine-stats {
+  background: #fff;
+  border-radius: 12px;
+  margin: 0 0 16px;
+  padding: 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.mine-stat { text-align: center; flex: 1; }
+.mine-stat-num { font-size: 22px; font-weight: 700; color: #1e293b; line-height: 1.2; }
+.mine-stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+.mine-stat-div { width: 1px; height: 28px; background: #e2e8f0; }
+
+/* ========== 我的发布页卡片美化 ========== */
+#view .item-card {
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+#view .item-card .item-body {
+  padding: 16px;
+}
+#view .mine-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+#view .mine-actions .btn {
+  flex: 1;
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 10px 0;
+  font-weight: 500;
+}
+#view .chips-row {
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}

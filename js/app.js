@@ -475,6 +475,10 @@
     var state = MineState;
     var list = C.filterItems(mine, Object.assign({ includeDraft: true }, state));
 
+    var openCount = items.filter(function(it){return it.status === C.STATUS_OPEN;}).length;
+    var doneCount = items.filter(function(it){return it.status === C.STATUS_DONE;}).length;
+    var draftCount = items.filter(function(it){return it.status === C.STATUS_DRAFT;}).length;
+
     var html = '<div class="section"><p class="muted">这里集中管理你发布的信息，可修改状态或删除。</p></div>' +
       '<div class="chips-row">' +
         chipHtml('全部', 'all', state.type === 'all', 'set-m-type') +
