@@ -10,7 +10,7 @@
     ? require('./core.js')
     : global.CLFCore;
 
-  var ITEMS_KEY = 'clf_items_v1';
+  var ITEMS_KEY = 'clf_items_v4';
   var HISTORY_KEY = 'clf_search_history_v1';
   var SEED = null;
 
@@ -55,13 +55,13 @@
       return CORE.createItem(fields, base - age);
     };
     var list = [
-      mk({ type: 'found', category: '证件卡类', title: '校园卡（张同学）', location: '教学楼 3 号楼 301 教室', place: '讲台抽屉', desc: '蓝色卡套，正面有姓名与学号贴纸。', contact: '13850001234', contactName: '王梓萱' }, 3 * H),
-      mk({ type: 'lost', category: '电子设备', title: '白色 AirPods Pro 充电盒', location: '体育馆·风雨操场', place: '篮球场观众席', desc: '充电盒背面有轻微划痕，壳内贴了“FZU”贴纸。', contact: '15960009876', contactName: '陈雨桐' }, 22 * H),
+      mk({ type: 'found', category: '证件卡类', title: '校园卡（张同学）', location: '教学楼 3 号楼 301 教室', place: '讲台抽屉', desc: '蓝色卡套，正面有姓名与学号贴纸。', contact: '13850001234', contactName: '王梓萱', mine: true }, 3 * H),
+      mk({ type: 'lost', category: '电子设备', title: '白色 AirPods Pro 充电盒', location: '体育馆·风雨操场', place: '篮球场观众席', desc: '充电盒背面有轻微划痕，壳内贴了”FZU”贴纸。', contact: '15960009876', contactName: '陈雨桐' }, 22 * H),
       mk({ type: 'found', category: '电子设备', title: '银色 65W 笔记本充电器', location: '东 3-401 教室', place: '后排插座旁', desc: '联想原装，线长约 1.8 米。', contact: 'qq: 88450123', contactName: '李昊宇' }, 2 * D),
-      mk({ type: 'lost', category: '钥匙饰品', title: '钥匙串（带蓝色门禁卡）', location: '图书馆二楼自习区', place: '靠窗第三排', desc: '三把钥匙加一个蓝色门禁卡挂件。', contact: '13770006543', contactName: '林晓' }, 5 * H),
+      mk({ type: 'lost', category: '钥匙饰品', title: '钥匙串（带蓝色门禁卡）', location: '图书馆二楼自习区', place: '靠窗第三排', desc: '三把钥匙加一个蓝色门禁卡挂件。', contact: '13770006543', contactName: '王梓萱', mine: true }, 5 * H),
       mk({ type: 'found', category: '生活用品', title: '黑色折叠雨伞', location: '食堂一楼', place: '门口雨伞架', desc: '黑色自动折叠伞，伞柄有挂绳。', contact: '18860007788', contactName: '郑凯' }, D + 4 * H),
       mk({ type: 'lost', category: '证件卡类', title: '学生证（2024级）', location: '运动场', place: '看台', desc: '红色封皮学生证，内有校园卡。', contact: '13650005566', contactName: '赵一鸣' }, 4 * D),
-      mk({ type: 'found', category: '生活用品', title: '蓝色保温水杯', location: '宿舍 3 号楼', place: '一楼洗衣房', desc: '500ml 保温杯，杯盖有贴纸。', contact: '15060001122', contactName: '周可欣' }, 6 * H),
+      mk({ type: 'found', category: '生活用品', title: '蓝色保温水杯', location: '宿舍 3 号楼', place: '一楼洗衣房', desc: '500ml 保温杯，杯盖有贴纸。', contact: '15060001122', contactName: '王梓萱', mine: true }, 6 * H),
       mk({ type: 'lost', category: '电子设备', title: '有线耳机（白色）', location: '综合楼 B 区', place: '302 机房', desc: '普通白色有线耳机。', contact: 'qq: 1023456789', contactName: '吴思远' }, 8 * D)
     ];
     // 其中 2 条标记为已找到/已归还，演示状态闭环
