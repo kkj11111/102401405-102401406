@@ -335,7 +335,7 @@
         '<input id="f-place" type="text" maxlength="30" placeholder="如：301 教室讲台抽屉"/>' +
         '<div class="form-error" data-for="place"></div></div>' +
       '<div class="form-group"><label>发生时间（可选）</label>' +
-        '<input id="f-time" type="datetime-local"/>' +
+        '<input id="f-time" type="datetime-local" lang="zh-CN"/>' +
         '<div class="form-error" data-for="time"></div></div>' +
       '<div class="form-group"><label>物品描述（可选）</label>' +
         '<textarea id="f-desc" maxlength="200" placeholder="描述物品特征，方便失主/拾到者辨认"></textarea>' +
@@ -441,7 +441,7 @@
           '标记为“' + (it.type === C.TYPE_LOST ? '已找到' : '已归还') + '”</button>' +
       '</div>';
     } else {
-      html += '<div class="detail-block" style="background:var(--done-light)"><h3>✅ 已结案</h3>' +
+      html += '<div class="detail-block" style="background:var(--done-light)"><h3>✅ 已完成</h3>' +
         '<p class="muted">这条信息已标记为“' + statusText + '”，请在「我的发布」中管理。</p>' +
       '</div>';
     }
@@ -484,7 +484,7 @@
       '<div class="chips-row">' +
         chipHtml('全部状态', 'all', state.status === 'all', 'set-m-status') +
         chipHtml('进行中', 'open', state.status === 'open', 'set-m-status') +
-        chipHtml('已结案', 'done', state.status === 'done', 'set-m-status') +
+        chipHtml('已完成', 'done', state.status === 'done', 'set-m-status') +
         chipHtml('草稿', 'draft', state.status === 'draft', 'set-m-status') +
       '</div>';
 
@@ -636,13 +636,15 @@
         renderMine();
         break;
       }
-      case 'ask-delete':
-        showConfirm('删除这条信息？', '“' + val + '”删除后不可恢复。', function () {
+      case 'ask-delete': {
+        var itDel = C.getItemById(S.loadItems(), id);
+        showConfirm('删除这条信息？', '“' + (itDel ? itDel.title : '') + '”删除后不可恢复。', function () {
           S.saveItems(C.removeItem(S.loadItems(), id));
           toast('已删除');
           renderMine();
         });
         break;
+      }
       case 'publish-draft': {
         var itemsD = S.loadItems();
         var itD = C.getItemById(itemsD, id);
