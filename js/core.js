@@ -116,7 +116,7 @@
       id: item.id, type: item.type, category: item.category,
       title: item.title, desc: item.desc, location: item.location, place: item.place,
       happenedAt: item.happenedAt, contact: item.contact, contactName: item.contactName,
-      image: item.image || '',
+      image: item.image || '', mine: item.mine === true,
       status: status, createdAt: item.createdAt, updatedAt: Date.now()
     };
   }
